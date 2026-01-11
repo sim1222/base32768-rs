@@ -1,59 +1,106 @@
 use criterion::{Criterion, criterion_group, criterion_main};
+use rand::{Rng as _, SeedableRng, rngs::StdRng};
 use std::hint::black_box;
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let one_byte_array: [u8; 1] = [127];
-    let ten_kilobytes_array: [u8; 10_000] = (0..10_000)
-        .map(|i| (i & 0xff) as u8)
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap();
-    let one_megabytes_array: [u8; 1_000_000] = (0..1_000_000)
-        .map(|i| (i & 0xff) as u8)
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap();
-    let one_byte_string = base32768::encode(&one_byte_array);
-    let ten_kilobytes_string = base32768::encode(&ten_kilobytes_array);
-    let one_megabytes_string = base32768::encode(&one_megabytes_array);
+    let mut rng = StdRng::seed_from_u64(789);
+
+    // let decoder = base32768::FastDecoder::new(
+    let decoder = base32768::LudicrousDecoder::new(
+        base32768_table::Z15_REPERTOIRE,
+        base32768_table::Z7_REPERTOIRE,
+    );
 
     let mut group = c.benchmark_group("base32768");
-    group.throughput(criterion::Throughput::Elements(1));
 
+    group.throughput(criterion::Throughput::Bytes(1));
     group.bench_function("encoderOneByte", |b| {
-        b.iter(|| {
-            black_box(base32768::encode(black_box(&one_byte_array)));
-        })
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 1];
+                rng.fill(&mut data[..]);
+                data
+            },
+            |data| {
+                black_box(base32768::encode(black_box(&data)));
+            },
+            criterion::BatchSize::SmallInput,
+        );
     });
 
+    group.throughput(criterion::Throughput::Bytes(10_000));
     group.bench_function("encoderTenKilobytes", |b| {
-        b.iter(|| {
-            black_box(base32768::encode(black_box(&ten_kilobytes_array)));
-        })
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 10_000];
+                rng.fill(&mut data[..]);
+                data
+            },
+            |data| {
+                black_box(base32768::encode(black_box(&data)));
+            },
+            criterion::BatchSize::SmallInput,
+        );
     });
 
+    group.throughput(criterion::Throughput::Bytes(1_000_000));
     group.bench_function("encoderOneMegabyte", |b| {
-        b.iter(|| {
-            black_box(base32768::encode(black_box(&one_megabytes_array)));
-        })
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 1_000_000];
+                rng.fill(&mut data[..]);
+                data
+            },
+            |data| {
+                black_box(base32768::encode(black_box(&data)));
+            },
+            criterion::BatchSize::LargeInput,
+        );
     });
 
+    group.throughput(criterion::Throughput::Bytes(1));
     group.bench_function("decoderOneByte", |b| {
-        b.iter(|| {
-            black_box(base32768::decode(black_box(&one_byte_string)).unwrap());
-        })
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 1];
+                rng.fill(&mut data[..]);
+                base32768::encode(&data)
+            },
+            |data| {
+                black_box(decoder.decode(black_box(&data)));
+            },
+            criterion::BatchSize::SmallInput,
+        );
     });
 
+    group.throughput(criterion::Throughput::Bytes(10_000));
     group.bench_function("decoderTenKilobytes", |b| {
-        b.iter(|| {
-            black_box(base32768::decode(black_box(&ten_kilobytes_string)).unwrap());
-        })
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 10_000];
+                rng.fill(&mut data[..]);
+                base32768::encode(&data)
+            },
+            |data| {
+                black_box(decoder.decode(black_box(&data)));
+            },
+            criterion::BatchSize::SmallInput,
+        );
     });
 
+    group.throughput(criterion::Throughput::Bytes(1_000_000));
     group.bench_function("decoderOneMegabyte", |b| {
-        b.iter(|| {
-            black_box(base32768::decode(black_box(&one_megabytes_string)).unwrap());
-        })
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 1_000_000];
+                rng.fill(&mut data[..]);
+                base32768::encode(&data)
+            },
+            |data| {
+                black_box(decoder.decode(black_box(&data)));
+            },
+            criterion::BatchSize::LargeInput,
+        );
     });
 
     group.finish();

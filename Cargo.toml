@@ -15,6 +15,7 @@ base32768-table = { path = "base32768-table" }
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }
 datatest-stable = "0.3.3"
+rand = "0.8"
 
 [[bench]]
 name = "benchmark"
