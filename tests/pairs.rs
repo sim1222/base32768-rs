@@ -25,8 +25,10 @@ fn test_decode(path: &Path) -> datatest_stable::Result<()> {
     let expected_bin = fs::read(bin_path)?;
 
     // let decoder = base32768::FastDecoder::new(base32768_table::Z15_REPERTOIRE, base32768_table::Z7_REPERTOIRE);
-    let decoder = base32768::LudicrousDecoder::new(base32768_table::Z15_REPERTOIRE, base32768_table::Z7_REPERTOIRE);
-    let decoded = decoder.decode(&txt_data);
+    // let decoder = base32768::LudicrousDecoder::new(base32768_table::Z15_REPERTOIRE, base32768_table::Z7_REPERTOIRE);
+    // let decoder = base32768::CorrectFastDecoder::new(&base32768_table::DECODE_LOOKUP_TABLE);
+    // let decoded = decoder.decode(&txt_data);
+    let decoded = base32768::decode(&txt_data);
 
     assert_eq!(decoded, expected_bin, "Decoding failed for {:?}", txt_path);
 
