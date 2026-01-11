@@ -82,6 +82,7 @@ pub fn decode(src: &str) -> Vec<u8> {
         return Vec::new();
     }
 
+    // テーブル取得（初回のみ構築）
     let table_ref = FAST_LOOKUP_TABLE.get_or_init(|| {
         let mut table: Box<[u32; 65536]> = vec![0u32; 65536]
             .into_boxed_slice()
@@ -99,57 +100,184 @@ pub fn decode(src: &str) -> Vec<u8> {
         table
     });
 
-    let capacity = src.chars().count() * 15 / 8;
+    let s_len = src.len();
+    let capacity = s_len * 2;
     let mut result: Vec<u8> = Vec::with_capacity(capacity);
 
     unsafe {
         let dst_ptr = result.as_mut_ptr();
         let mut out_offset = 0;
-        let mut buf: u64 = 0;
+
+        let mut buf: u128 = 0;
         let mut bit_count: u32 = 0;
 
         let table_ptr = table_ref.as_ptr();
+        let mut chars = src.chars();
 
-        for c in src.chars() {
-            let c_idx = c as usize;
-
-            // 1. ルックアップ (BMP内のみ)
-            if c_idx >= 65536 {
+        loop {
+            // バッファにゴミが溜まりすぎている場合（稀なケース）、
+            // オーバーフローを防ぐために一度手動でSlow Pathへ回して消化させる
+            if bit_count > 8 {
+                // ここには基本来ないはずですが、安全弁です
+                if let Some(c) = chars.next() {
+                    let idx = c as usize;
+                    if idx < 65536 {
+                        let entry = *table_ptr.add(idx);
+                        let width = entry >> 16;
+                        let val = entry & 0xFFFF;
+                        buf = (buf << width) | (val as u128);
+                        bit_count += width;
+                        while bit_count >= 8 {
+                            bit_count -= 8;
+                            *dst_ptr.add(out_offset) = (buf >> bit_count) as u8;
+                            out_offset += 1;
+                        }
+                    }
+                } else {
+                    break;
+                }
                 continue;
             }
 
-            let entry = *table_ptr.add(c_idx);
-            let width = entry >> 16; // ビット幅
+            // 8文字先読み
+            let mut chunk_iter = chars.clone();
+            let c0 = match chunk_iter.next() {
+                Some(c) => c as usize,
+                None => break,
+            };
+            let c1 = match chunk_iter.next() {
+                Some(c) => c as usize,
+                None => break,
+            };
+            let c2 = match chunk_iter.next() {
+                Some(c) => c as usize,
+                None => break,
+            };
+            let c3 = match chunk_iter.next() {
+                Some(c) => c as usize,
+                None => break,
+            };
+            let c4 = match chunk_iter.next() {
+                Some(c) => c as usize,
+                None => break,
+            };
+            let c5 = match chunk_iter.next() {
+                Some(c) => c as usize,
+                None => break,
+            };
+            let c6 = match chunk_iter.next() {
+                Some(c) => c as usize,
+                None => break,
+            };
+            let c7 = match chunk_iter.next() {
+                Some(c) => c as usize,
+                None => break,
+            };
+            chars = chunk_iter;
 
-            // 無効文字(width==0)はスキップ
-            if width == 0 {
-                continue;
-            }
+            // 並列ロード
+            let e0 = *table_ptr.add(c0);
+            let e1 = *table_ptr.add(c1);
+            let e2 = *table_ptr.add(c2);
+            let e3 = *table_ptr.add(c3);
+            let e4 = *table_ptr.add(c4);
+            let e5 = *table_ptr.add(c5);
+            let e6 = *table_ptr.add(c6);
+            let e7 = *table_ptr.add(c7);
 
-            let val = entry & 0xFFFF; // 値
+            // 全員15bitかチェック
+            let combined = (e0 & e1 & e2 & e3 & e4 & e5 & e6 & e7) & 0xFFFF0000;
 
-            // 2. ビット合成
-            buf = (buf << width) | (val as u64);
-            bit_count += width;
+            if combined == 0x000F0000 {
+                // ★ Fast Path: 15bit x 8 = 120bit ★
 
-            // 3. バイト抽出 (展開ループ)
-            // 最大でも22bit程度しか溜まらないため、ループ回数は知れている
-            if bit_count >= 8 {
-                bit_count -= 8;
-                *dst_ptr.add(out_offset) = (buf >> bit_count) as u8;
-                out_offset += 1;
+                let packed: u128 = ((e0 as u128 & 0xFFFF) << 105)
+                    | ((e1 as u128 & 0xFFFF) << 90)
+                    | ((e2 as u128 & 0xFFFF) << 75)
+                    | ((e3 as u128 & 0xFFFF) << 60)
+                    | ((e4 as u128 & 0xFFFF) << 45)
+                    | ((e5 as u128 & 0xFFFF) << 30)
+                    | ((e6 as u128 & 0xFFFF) << 15)
+                    | (e7 as u128 & 0xFFFF);
 
+                // ここでオーバーフローしないのは、冒頭の if bit_count > 8 チェックのおかげ
+                buf = (buf << 120) | packed;
+                bit_count += 120;
+
+                // 【修正点】溜まったビットを可能な限りすべて吐き出す
+                // 15バイト(120bit)増えたので、必ず u64, u32, u16, u8 の順で書き出せる
+
+                // 1. 8バイト (64bit) 書き出し
+                if bit_count >= 64 {
+                    bit_count -= 64;
+                    let val = (buf >> bit_count) as u64;
+                    (dst_ptr.add(out_offset) as *mut u64).write_unaligned(val.to_be());
+                    out_offset += 8;
+                }
+
+                // 2. 4バイト (32bit) 書き出し
+                if bit_count >= 32 {
+                    bit_count -= 32;
+                    let val = (buf >> bit_count) as u32;
+                    (dst_ptr.add(out_offset) as *mut u32).write_unaligned(val.to_be());
+                    out_offset += 4;
+                }
+
+                // 3. 2バイト (16bit) 書き出し
+                if bit_count >= 16 {
+                    bit_count -= 16;
+                    let val = (buf >> bit_count) as u16;
+                    (dst_ptr.add(out_offset) as *mut u16).write_unaligned(val.to_be());
+                    out_offset += 2;
+                }
+
+                // 4. 1バイト (8bit) 書き出し
                 if bit_count >= 8 {
                     bit_count -= 8;
-                    *dst_ptr.add(out_offset) = (buf >> bit_count) as u8;
+                    let val = (buf >> bit_count) as u8;
+                    *dst_ptr.add(out_offset) = val;
                     out_offset += 1;
+                }
+
+                // この時点で bit_count は必ず 8 未満になります。
+                // 次のループでのオーバーフローは発生しません。
+            } else {
+                // Fallback (Slow Path)
+                let entries = [e0, e1, e2, e3, e4, e5, e6, e7];
+                for &entry in &entries {
+                    let width = entry >> 16;
+                    let val = entry & 0xFFFF;
+                    buf = (buf << width) | (val as u128);
+                    bit_count += width;
+                    while bit_count >= 8 {
+                        bit_count -= 8;
+                        *dst_ptr.add(out_offset) = (buf >> bit_count) as u8;
+                        out_offset += 1;
+                    }
                 }
             }
         }
 
-        // 書き込みサイズの確定
+        // 残りの文字処理
+        for c in chars {
+            let idx = c as usize;
+            if idx < 65536 {
+                let entry = *table_ptr.add(idx);
+                let width = entry >> 16;
+                if width > 0 {
+                    let val = entry & 0xFFFF;
+                    buf = (buf << width) | (val as u128);
+                    bit_count += width;
+                    while bit_count >= 8 {
+                        bit_count -= 8;
+                        *dst_ptr.add(out_offset) = (buf >> bit_count) as u8;
+                        out_offset += 1;
+                    }
+                }
+            }
+        }
+
         result.set_len(out_offset);
     }
-
     result
 }

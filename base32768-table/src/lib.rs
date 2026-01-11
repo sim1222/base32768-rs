@@ -1,2 +1,8 @@
 #[rustfmt::skip]
-include!(concat!(env!("OUT_DIR"), "/table.rs"));
+#[allow(clippy::all)]
+#[allow(warnings)]
+mod table {
+	include!(concat!(env!("OUT_DIR"), "/table.rs"));
+}
+
+pub use table::{DECODE_LOOKUP_TABLE, Z15_REPERTOIRE, Z7_REPERTOIRE};

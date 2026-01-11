@@ -22,13 +22,20 @@ fn test_decode(path: &Path) -> datatest_stable::Result<()> {
     let bin_path = path.with_extension("bin");
 
     let txt_data = fs::read_to_string(txt_path)?;
-    let expected_bin = fs::read(bin_path)?;
+    let expected_bin = fs::read(&bin_path)?;
 
     // let decoder = base32768::FastDecoder::new(base32768_table::Z15_REPERTOIRE, base32768_table::Z7_REPERTOIRE);
     // let decoder = base32768::LudicrousDecoder::new(base32768_table::Z15_REPERTOIRE, base32768_table::Z7_REPERTOIRE);
     // let decoder = base32768::CorrectFastDecoder::new(&base32768_table::DECODE_LOOKUP_TABLE);
     // let decoded = decoder.decode(&txt_data);
     let decoded = base32768::decode(&txt_data);
+
+    // save decoded data if not equal (for easier debugging)
+    if decoded != expected_bin {
+        let debug_path = bin_path.with_extension("decoded.bin");
+        fs::write(&debug_path, &decoded)?;
+        eprintln!("Decoded data saved to {:?}", debug_path);
+    }
 
     assert_eq!(decoded, expected_bin, "Decoding failed for {:?}", txt_path);
 
