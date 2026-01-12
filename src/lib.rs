@@ -78,7 +78,7 @@ pub fn encode(b: &[u8]) -> String {
 static FAST_LOOKUP_TABLE: OnceLock<Box<[u32; 65536]>> = OnceLock::new();
 
 /// バッファから指定ビット数の値を抽出して出力
-#[inline]
+#[inline(always)]
 fn extract_bytes(buf: &mut u128, bit_count: &mut u32, result: &mut Vec<u8>) {
     // 8バイト (64bit)
     if *bit_count >= 64 {
@@ -109,7 +109,7 @@ fn extract_bytes(buf: &mut u128, bit_count: &mut u32, result: &mut Vec<u8>) {
 }
 
 /// ビット値をバッファに追加し、完成したバイトを出力
-#[inline]
+#[inline(always)]
 fn feed_bits(buf: &mut u128, bit_count: &mut u32, width: u32, val: u32, result: &mut Vec<u8>) {
     *buf = (*buf << width) | (val as u128);
     *bit_count += width;
