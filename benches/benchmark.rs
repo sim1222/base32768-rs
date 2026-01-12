@@ -20,7 +20,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("encoderOneByte", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 1];
+                let mut data = vec![0u8; 1];
                 rng.fill(&mut data[..]);
                 data
             },
@@ -35,7 +35,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("encoder3749Byte", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 3749];
+                let mut data = vec![0u8; 3749];
                 rng.fill(&mut data[..]);
                 data
             },
@@ -50,7 +50,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("encoder3750Byte", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 3750];
+                let mut data = vec![0u8; 3750];
                 rng.fill(&mut data[..]);
                 data
             },
@@ -65,7 +65,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("encoderTenKilobytes", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 10_000];
+                let mut data = vec![0u8; 10_000];
                 rng.fill(&mut data[..]);
                 data
             },
@@ -80,7 +80,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("encoderOneMegabyte", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 1_000_000];
+                let mut data = vec![0u8; 1_000_000];
                 rng.fill(&mut data[..]);
                 data
             },
@@ -95,7 +95,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("decoderOneByte", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 1];
+                let mut data = vec![0u8; 1];
                 rng.fill(&mut data[..]);
                 base32768::encode(&data)
             },
@@ -110,7 +110,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("decoder3749Byte", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 3749];
+                let mut data = vec![0u8; 3749];
                 rng.fill(&mut data[..]);
                 base32768::encode(&data)
             },
@@ -125,7 +125,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("decoder3750Byte", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 3750];
+                let mut data = vec![0u8; 3750];
                 rng.fill(&mut data[..]);
                 base32768::encode(&data)
             },
@@ -140,7 +140,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("decoderTenKilobytes", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 10_000];
+                let mut data = vec![0u8; 10_000];
                 rng.fill(&mut data[..]);
                 base32768::encode(&data)
             },
@@ -155,7 +155,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("decoderOneMegabyte", |b| {
         b.iter_batched(
             || {
-                let mut data = [0u8; 1_000_000];
+                let mut data = vec![0u8; 1_000_000];
                 rng.fill(&mut data[..]);
                 base32768::encode(&data)
             },
