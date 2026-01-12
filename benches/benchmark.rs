@@ -31,6 +31,36 @@ fn criterion_benchmark(c: &mut Criterion) {
         );
     });
 
+    group.throughput(criterion::Throughput::Bytes(3749));
+    group.bench_function("encoder3749Byte", |b| {
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 3749];
+                rng.fill(&mut data[..]);
+                data
+            },
+            |data| {
+                black_box(base32768::encode(black_box(&data)));
+            },
+            criterion::BatchSize::SmallInput,
+        );
+    });
+
+    group.throughput(criterion::Throughput::Bytes(3750));
+    group.bench_function("encoder3750Byte", |b| {
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 3750];
+                rng.fill(&mut data[..]);
+                data
+            },
+            |data| {
+                black_box(base32768::encode(black_box(&data)));
+            },
+            criterion::BatchSize::SmallInput,
+        );
+    });
+
     group.throughput(criterion::Throughput::Bytes(10_000));
     group.bench_function("encoderTenKilobytes", |b| {
         b.iter_batched(
@@ -66,6 +96,36 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter_batched(
             || {
                 let mut data = [0u8; 1];
+                rng.fill(&mut data[..]);
+                base32768::encode(&data)
+            },
+            |data| {
+                black_box(base32768::decode(black_box(&data)));
+            },
+            criterion::BatchSize::SmallInput,
+        );
+    });
+
+    group.throughput(criterion::Throughput::Bytes(3749));
+    group.bench_function("decoder3749Byte", |b| {
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 3749];
+                rng.fill(&mut data[..]);
+                base32768::encode(&data)
+            },
+            |data| {
+                black_box(base32768::decode(black_box(&data)));
+            },
+            criterion::BatchSize::SmallInput,
+        );
+    });
+
+    group.throughput(criterion::Throughput::Bytes(3750));
+    group.bench_function("decoder3750Byte", |b| {
+        b.iter_batched(
+            || {
+                let mut data = [0u8; 3750];
                 rng.fill(&mut data[..]);
                 base32768::encode(&data)
             },
