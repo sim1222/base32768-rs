@@ -21,6 +21,10 @@ rand = "0.8"
 name = "benchmark"
 harness = false
 
+[profile.bench]
+debug = true
+strip = false
+
 [[test]]
 name = "pairs"
 harness = false

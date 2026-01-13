@@ -36,10 +36,20 @@ fn main() {
         decode_lookup_table.insert(*chr, (7, z as u16));
     });
 
+    let mut fast_decode_lookup_table: Vec<u32> = vec![0u32; 65536];
+
+    for (&c, &(width, val)) in &decode_lookup_table {
+        let idx = c as usize;
+        if idx < 65536 {
+            fast_decode_lookup_table[idx] = ((width as u32) << 16) | (val as u32);
+        }
+    }
+
     let const_declarations = [
         const_declaration!(pub Z15_REPERTOIRE = z15_repertoire),
         const_declaration!(pub Z7_REPERTOIRE = z7_repertoire),
         const_declaration!(pub DECODE_LOOKUP_TABLE = decode_lookup_table),
+        const_declaration!(pub FAST_DECODE_LOOKUP_TABLE = fast_decode_lookup_table),
     ]
     .join("\n");
 

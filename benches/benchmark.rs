@@ -5,15 +5,6 @@ use std::hint::black_box;
 fn criterion_benchmark(c: &mut Criterion) {
     let mut rng = StdRng::seed_from_u64(789);
 
-    // let decoder = base32768::FastDecoder::new(
-    // let decoder = base32768::CorrectFastDecoder::new(
-    //     &base32768_table::DECODE_LOOKUP_TABLE,
-    // );
-    // let decoder = base32768::LudicrousDecoder::new(
-    //     base32768_table::Z15_REPERTOIRE,
-    //     base32768_table::Z7_REPERTOIRE,
-    // );
-
     let mut group = c.benchmark_group("base32768");
 
     group.throughput(criterion::Throughput::Bytes(1));
