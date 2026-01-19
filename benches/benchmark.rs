@@ -91,7 +91,7 @@ fn criterion_benchmark(c: &mut Criterion) {
                 base32768::encode(&data)
             },
             |data| {
-                black_box(base32768::decode(black_box(&data)));
+                let _ = black_box(base32768::decode(black_box(&data)));
             },
             criterion::BatchSize::SmallInput,
         );
@@ -106,7 +106,7 @@ fn criterion_benchmark(c: &mut Criterion) {
                 base32768::encode(&data)
             },
             |data| {
-                black_box(base32768::decode(black_box(&data)));
+                let _ = black_box(base32768::decode(black_box(&data)));
             },
             criterion::BatchSize::SmallInput,
         );
@@ -121,7 +121,7 @@ fn criterion_benchmark(c: &mut Criterion) {
                 base32768::encode(&data)
             },
             |data| {
-                black_box(base32768::decode(black_box(&data)));
+                let _ = black_box(base32768::decode(black_box(&data)));
             },
             criterion::BatchSize::SmallInput,
         );
@@ -136,7 +136,7 @@ fn criterion_benchmark(c: &mut Criterion) {
                 base32768::encode(&data)
             },
             |data| {
-                black_box(base32768::decode(black_box(&data)));
+                let _ = black_box(base32768::decode(black_box(&data)));
             },
             criterion::BatchSize::SmallInput,
         );
@@ -151,7 +151,7 @@ fn criterion_benchmark(c: &mut Criterion) {
                 base32768::encode(&data)
             },
             |data| {
-                black_box(base32768::decode(black_box(&data)));
+                let _ = black_box(base32768::decode(black_box(&data)));
             },
             criterion::BatchSize::LargeInput,
         );

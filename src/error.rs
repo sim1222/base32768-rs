@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum DecodeError {
-    #[error("Unrecognised Base32768 character: {0}")]
+    #[error("Unrecognized Base32768 character: {0}")]
     UnrecognizedCharacter(char),
 
     #[error("Secondary character found before end of input at position {0}")]
